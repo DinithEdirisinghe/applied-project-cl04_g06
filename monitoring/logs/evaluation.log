@@ -1,0 +1,22 @@
+2026-05-30 23:21:02,669 - INFO - ============================================================
+2026-05-30 23:21:02,669 - INFO - MODEL EVALUATION
+2026-05-30 23:21:02,669 - INFO - ============================================================
+2026-05-30 23:21:03,292 - INFO - Evaluation metrics: {'MSE': 0.0, 'RMSE': 0.0032, 'MAE': 0.0016, 'R2_Score': 0.9966}
+2026-05-30 23:21:03,294 - INFO - Evaluation metrics saved to: C:\Users\Dev Bohra\Desktop\applied-project-cl04_g06\artifacts\metrics\evaluation_metrics.json
+2026-05-30 23:21:03,294 - INFO - Evaluation complete.
+2026-05-31 06:14:26,876 - INFO - ============================================================
+2026-05-31 06:14:26,879 - INFO - MODEL EVALUATION
+2026-05-31 06:14:26,879 - INFO - ============================================================
+2026-05-31 06:14:27,114 - INFO - Evaluation metrics: {'MSE': 0.0, 'RMSE': 0.0032, 'MAE': 0.0016, 'R2_Score': 0.9966}
+2026-05-31 06:14:27,115 - INFO - Evaluation metrics saved to: C:\Users\sandu\Downloads\assignment123124123\applied-project-cl04_g06\artifacts\metrics\evaluation_metrics.json
+2026-05-31 06:14:27,115 - INFO - Updating HTML report: C:\Users\sandu\Downloads\assignment123124123\applied-project-cl04_g06\reports\performance_report.html
+2026-05-31 06:14:27,181 - INFO - Successfully connected evaluate metrics to performance_report.html
+2026-05-31 06:14:27,181 - INFO - Evaluation complete.
+2026-05-31 06:53:19,531 - INFO - ============================================================
+2026-05-31 06:53:19,531 - INFO - MODEL EVALUATION
+2026-05-31 06:53:19,531 - INFO - ============================================================
+2026-05-31 06:53:19,803 - INFO - Evaluation metrics: {'MSE': 0.0, 'RMSE': 0.0032, 'MAE': 0.0016, 'R2_Score': 0.9966}
+2026-05-31 06:53:19,804 - INFO - Evaluation metrics saved to: C:\Users\sandu\Downloads\assignment123124123\applied-project-cl04_g06\artifacts\metrics\evaluation_metrics.json
+2026-05-31 06:53:19,805 - INFO - Updating HTML report: C:\Users\sandu\Downloads\assignment123124123\applied-project-cl04_g06\reports\performance_report.html
+2026-05-31 06:53:19,865 - INFO - Successfully connected evaluate metrics to performance_report.html
+2026-05-31 06:53:19,865 - INFO - Evaluation complete.

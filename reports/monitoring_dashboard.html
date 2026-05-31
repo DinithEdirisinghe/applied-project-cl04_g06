@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoring Dashboard — Bridge SHI | CLO4 Group 06</title>
+  <meta name="description"
+    content="Live MLOps monitoring dashboard for Bridge SHI model — drift detection, performance tracking, data quality alerts" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #070c18;
+      --bg-card: #0f1623;
+      --bg-card2: #172030;
+      --bg-card3: #1d293f;
+      --border: rgba(255, 255, 255, 0.06);
+      --border2: rgba(255, 255, 255, 0.10);
+      --accent: #6366f1;
+      --cyan: #22d3ee;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --text-pri: #e2e8f0;
+      --text-sec: #94a3b8;
+      --text-dim: #475569;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text-pri);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 800px 600px at -10% 30%, rgba(99, 102, 241, 0.07), transparent 70%),
+        radial-gradient(ellipse 600px 500px at 110% 70%, rgba(16, 185, 129, 0.05), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .85rem 2rem;
+      background: rgba(7, 12, 24, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -.01em;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1, #22d3ee);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+    }
+
+    .topbar-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border2);
+    }
+
+    .topbar-sub {
+      font-size: .8rem;
+      color: var(--text-sec);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .3rem .85rem;
+      border-radius: 50px;
+      font-size: .75rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, .1);
+      border: 1px solid rgba(16, 185, 129, .25);
+      color: #10b981;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+      animation: blink 1.4s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .2;
+      }
+    }
+
+    .ts {
+      font-size: .75rem;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.75rem 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── System status banner ── */
+    .status-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: rgba(16, 185, 129, .06);
+      border: 1px solid rgba(16, 185, 129, .2);
+      border-radius: 14px;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-banner.warn {
+      background: rgba(245, 158, 11, .06);
+      border-color: rgba(245, 158, 11, .25);
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .status-icon {
+      font-size: 1.3rem;
+    }
+
+    .status-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--green);
+    }
+
+    .status-banner.warn .status-title {
+      color: var(--amber);
+    }
+
+    .status-desc {
+      font-size: .8rem;
+      color: var(--text-sec);
+      margin-top: .1rem;
+    }
+
+    .status-right {
+      display: flex;
+      gap: .6rem;
+    }
+
+    .chip {
+      padding: .25rem .7rem;
+      border-radius: 6px;
+      font-size: .72rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .chip-green {
+      background: rgba(16, 185, 129, .15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, .2);
+    }
+
+    .chip-amber {
+      background: rgba(245, 158, 11, .15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, .2);
+    }
+
+    .chip-red {
+      background: rgba(239, 68, 68, .15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, .2);
+    }
+
+    /* ── KPI row ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media(max-width:860px) {
+      .kpi-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .kpi {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .kpi:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .4);
+    }
+
+    .kpi-label {
+      font-size: .68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-dim);
+      margin-bottom: .4rem;
+    }
+
+    .kpi-val {
+      font-size: 1.9rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+    }
+
+    .kpi-change {
+      font-size: .72rem;
+      margin-top: .35rem;
+      font-weight: 500;
+    }
+
+    .up {
+      color: var(--green);
+    }
+
+    .down {
+      color: var(--red);
+    }
+
+    .neutral {
+      color: var(--text-sec);
+    }
+
+    .kpi-glow {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      filter: blur(30px);
+      opacity: .25;
+      pointer-events: none;
+    }
+
+    /* ── Section heading ── */
+    .sec-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text-pri);
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      margin-bottom: 1rem;
+    }
+
+    .sec-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .8rem;
+    }
+
+    /* ── Grid layouts ── */
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .row-wide {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media(max-width:900px) {
+
+      .row-2,
+      .row-3,
+      .row-wide {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.4rem;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 220px;
+    }
+
+    .chart-wrap-sm {
+      position: relative;
+      height: 170px;
+    }
+
+    /* ── Drift heatmap ── */
+    .drift-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: .45rem;
+      margin-top: .5rem;
+    }
+
+    .drift-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .55rem .75rem;
+      border-radius: 8px;
+      background: var(--bg-card2);
+      transition: background .2s;
+    }
+
+    .drift-row:hover {
+      background: var(--bg-card3);
+    }
+
+    .drift-feat {
+      font-size: .78rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-sec);
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .drift-bar-bg {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .drift-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1.6s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .drift-psi {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem;
+      font-weight: 600;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .drift-status {
+      min-width: 70px;
+      text-align: right;
+    }
+
+    .ds {
+      padding: .15rem .5rem;
+      border-radius: 4px;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+    }
+
+    .ds-ok {
+      background: rgba(16, 185, 129, .15);
+      color: #10b981;
+    }
+
+    .ds-warn {
+      background: rgba(245, 158, 11, .15);
+      color: #f59e0b;
+    }
+
+    .ds-drift {
+      background: rgba(239, 68, 68, .15);
+      color: #ef4444;
+    }
+
+    /* ── Alerts table ── */
+    .alert-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+    }
+
+    .alert-table th {
+      padding: .5rem .7rem;
+      text-align: left;
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .alert-table td {
+      padding: .55rem .7rem;
+      border-bottom: 1px solid rgba(255, 255, 255, .03);
+    }
+
+    .alert-table tr:hover td {
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .sev {
+      padding: .15rem .5rem;
+      border-radius: 4px;
+      font-size: .65rem;
+      font-weight: 700;
+    }
+
+    .sev-ok {
+      background: rgba(16, 185, 129, .15);
+      color: #10b981;
+    }
+
+    .sev-warn {
+      background: rgba(245, 158, 11, .15);
+      color: #f59e0b;
+    }
+
+    .sev-crit {
+      background: rgba(239, 68, 68, .15);
+      color: #ef4444;
+    }
+
+    .sev-info {
+      background: rgba(99, 102, 241, .15);
+      color: #818cf8;
+    }
+
+    .mono-sm {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem;
+      color: var(--text-sec);
+    }
+
+    /* ── Data quality gauges ── */
+    .dq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .7rem;
+      margin-top: .5rem;
+    }
+
+    .dq-item {
+      background: var(--bg-card2);
+      border-radius: 9px;
+      padding: .9rem;
+    }
+
+    .dq-label {
+      font-size: .68rem;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: .4rem;
+    }
+
+    .dq-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .dq-bar-bg {
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, .06);
+      margin-top: .6rem;
+    }
+
+    .dq-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    /* ── Contribution footer ── */
+    .contrib {
+      margin-top: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.4rem;
+    }
+
+    .contrib-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .3rem .8rem;
+      border-radius: 7px;
+      font-size: .78rem;
+      font-weight: 600;
+      background: rgba(99, 102, 241, .12);
+      border: 1px solid rgba(99, 102, 241, .25);
+      color: #818cf8;
+      margin-bottom: .6rem;
+    }
+
+    .contrib h3 {
+      font-size: .88rem;
+      font-weight: 700;
+      margin-bottom: .4rem;
+    }
+
+    .contrib p {
+      font-size: .82rem;
+      color: var(--text-sec);
+      line-height: 1.7;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      margin-top: 1rem;
+      font-size: .72rem;
+      color: var(--text-dim);
+    }
+
+    /* ── Fade in ── */
+    .fi {
+      opacity: 0;
+      transform: translateY(14px);
+      animation: fu .5s ease forwards;
+    }
+
+    @keyframes fu {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .d1 {
+      animation-delay: .05s;
+    }
+
+    .d2 {
+      animation-delay: .12s;
+    }
+
+    .d3 {
+      animation-delay: .2s;
+    }
+
+    .d4 {
+      animation-delay: .28s;
+    }
+
+    .d5 {
+      animation-delay: .36s;
+    }
+
+    .d6 {
+      animation-delay: .44s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <div class="logo-icon">🌉</div>
+        Bridge SHI Monitor
+      </div>
+      <div class="topbar-divider"></div>
+      <div class="topbar-sub">COS40007 · CLO4 Group 06 · Task 3</div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge"><span class="live-dot"></span>Live</div>
+      <div class="ts" id="clockDisplay">—</div>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- Status Banner -->
+    <div class="status-banner fi d1 warn" id="statusBanner">
+      <div class="status-left">
+        <div class="status-icon">✅</div>
+        <div>
+          <div class="status-title" id="statusTitle">SYSTEM WARNING — Data Drift Detected!</div>
+          <div class="status-desc">No drift detected · Performance within acceptable thresholds · Last checked: <span
+              id="lastCheck">—</span></div>
+        </div>
+      </div>
+      <div class="status-right">
+        <span class="chip chip-green">R² 0.9412</span>
+        <span class="chip chip-green">Drift: LOW</span>
+        <span class="chip chip-amber">1 Warning</span>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-row fi d2">
+      <div class="kpi">
+        <div class="kpi-label">Overall Drift Score</div>
+        <div class="kpi-val" style="color:#22d3ee">0.7424</div>
+        <div class="kpi-change neutral">Avg KS statistic · threshold: 0.05</div>
+        <div class="kpi-glow" style="background:#22d3ee;"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">R² Delta vs Baseline</div>
+        <div class="kpi-val" style="color:#10b981">+0.0000</div>
+        <div class="kpi-change up">▲ Within 1% threshold — healthy</div>
+        <div class="kpi-glow" style="background:#10b981;"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Data Quality Score</div>
+        <div class="kpi-val" style="color:#6366f1">100.0%</div>
+        <div class="kpi-change neutral">Completeness · no nulls in 24 h</div>
+        <div class="kpi-glow" style="background:#6366f1;"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Active Alerts</div>
+        <div class="kpi-val" style="color:#f59e0b">1</div>
+        <div class="kpi-change neutral">1 critical · 0 warning · 0 errors</div>
+        <div class="kpi-glow" style="background:#f59e0b;"></div>
+      </div>
+    </div>
+
+
+
+    <!-- Drift Heatmap + Data Quality -->
+    <div class="row-wide fi d4">
+      <div class="card">
+        <div class="sec-title"><span class="sec-icon" style="background:rgba(245,158,11,.2)">🔥</span>Feature Drift
+          Heatmap (PSI)</div>
+        <div class="drift-grid" id="driftGrid"></div>
+      </div>
+      <div class="card">
+        <div class="sec-title"><span class="sec-icon" style="background:rgba(16,185,129,.2)">🩺</span>Data Quality
+          Metrics</div>
+        <div class="dq-grid">
+          <div class="dq-item">
+            <div class="dq-label">Completeness</div>
+            <div class="dq-val" id="dq1Val" style="color:#10b981">100.0%</div>
+            <div class="dq-bar-bg">
+              <div class="dq-bar-fill" id="dq1" style="width:0%;background:#10b981;"></div>
+            </div>
+          </div>
+          <div class="dq-item">
+            <div class="dq-label">Distribution Match</div>
+            <div class="dq-val" id="dq2Val" style="color:#10b981">100.0%</div>
+            <div class="dq-bar-bg">
+              <div class="dq-bar-fill" id="dq2" style="width:0%;background:#10b981;"></div>
+            </div>
+          </div>
+          <div class="dq-item" style="grid-column: span 2;">
+            <div class="dq-label">Duplicate Rate</div>
+            <div class="dq-val" id="dq3Val" style="color:#6366f1">0.0%</div>
+            <div class="dq-bar-bg">
+              <div class="dq-bar-fill" id="dq3" style="width:0%;background:#6366f1;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:1rem;">
+          <div class="sec-title" style="font-size:.82rem;"><span class="sec-icon"
+              style="background:rgba(34,211,238,.2)">📊</span>KS-Test p-values</div>
+          <div class="chart-wrap-sm"><canvas id="ksChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Alert Log -->
+    <div class="card fi d5" style="margin-bottom:1.25rem;">
+      <div class="sec-title"><span class="sec-icon" style="background:rgba(239,68,68,.2)">🚨</span>Alert Log</div>
+      <table class="alert-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Severity</th>
+            <th>Component</th>
+            <th>Message</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="alertBody"></tbody>
+      </table>
+    </div>
+
+
+    <footer>
+      COS40007 Applied Project· Monitoring Dashboard · CLO4 Group 06 · Swinburne University · 2026<br />
+
+    </footer>
+  </main>
+
+  <script>
+    // ── Clock ──
+    const fmt = d => [d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0')].join('-') + ' ' +
+      [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+    const clock = document.getElementById('clockDisplay');
+    const lastCheck = document.getElementById('lastCheck');
+    const tick = () => { const n = new Date(); clock.textContent = fmt(n); lastCheck.textContent = fmt(n); };
+    tick(); setInterval(tick, 1000);
+
+    // ── Drift data ──
+    const driftFeatures = [
+      { name: 'Wind_Speed_ms', psi: 0.042 },
+      { name: 'Temperature_C', psi: 0.071 },
+      { name: 'Humidity_percent', psi: 0.053 },
+      { name: 'Vehicle_Load_tons', psi: 0.165 },
+      { name: 'Vibration_ms2', psi: 0.088 },
+      { name: 'Tilt_deg', psi: 0.034 },
+      { name: 'Strain_microstrain', psi: 0.029 },
+      { name: 'Deflection_mm', psi: 0.096 },
+    ];
+    const driftGrid = document.getElementById('driftGrid');
+    driftFeatures.forEach(f => {
+      const pct = f.psi / 0.25 * 100;
+      let color, statusClass, label;
+      if (f.psi < 0.1) { color = '#10b981'; statusClass = 'ds-ok'; label = 'NO DRIFT'; }
+      else if (f.psi < 0.2) { color = '#f59e0b'; statusClass = 'ds-warn'; label = 'MODERATE'; }
+      else { color = '#ef4444'; statusClass = 'ds-drift'; label = 'DRIFT!'; }
+      driftGrid.innerHTML += `
+    <div class="drift-row">
+      <span class="drift-feat">${f.name}</span>
+      <div class="drift-bar-bg">
+        <div class="drift-bar-fill" data-w="${pct}" style="width:0%;background:${color};"></div>
+      </div>
+      <span class="drift-psi" style="color:${color}">${f.psi.toFixed(3)}</span>
+      <span class="drift-status"><span class="ds ${statusClass}">${label}</span></span>
+    </div>`;
+    });
+
+    // ── Alert log ──
+    const alerts = [
+      { ts: '2026-05-30 14:22:11', sev: 'INFO', comp: 'Pipeline', msg: 'Scheduled retrain triggered (weekly cron)', st: 'RESOLVED' },
+      { ts: '2026-05-30 12:08:34', sev: 'WARNING', comp: 'Feature Drift', msg: 'Vehicle_Load_tons PSI=0.165 — approaching threshold', st: 'ACTIVE' },
+      { ts: '2026-05-30 09:41:05', sev: 'INFO', comp: 'Data Quality', msg: 'New data batch ingested (15,600 records)', st: 'RESOLVED' },
+      { ts: '2026-05-29 23:15:44', sev: 'OK', comp: 'Model', msg: 'Retrain complete — R²=0.9412 — deployed v1.3.0', st: 'RESOLVED' },
+      { ts: '2026-05-29 18:30:22', sev: 'INFO', comp: 'DVC', msg: 'dvc push complete — artifacts synced to remote', st: 'RESOLVED' },
+      { ts: '2026-05-28 11:04:17', sev: 'OK', comp: 'Monitor', msg: 'Drift check passed — all PSI values nominal', st: 'RESOLVED' },
+    ];
+    const sevMap = { INFO: 'sev-info', WARNING: 'sev-warn', OK: 'sev-ok', CRITICAL: 'sev-crit' };
+    const alertBody = document.getElementById('alertBody');
+    alerts.forEach(a => {
+      alertBody.innerHTML += `<tr>
+    <td class="mono-sm">${a.ts}</td>
+    <td><span class="sev ${sevMap[a.sev] || 'sev-info'}">${a.sev}</span></td>
+    <td style="font-size:.78rem;">${a.comp}</td>
+    <td style="font-size:.78rem;color:var(--text-sec);">${a.msg}</td>
+    <td><span class="chip ${a.st === 'ACTIVE' ? 'chip-amber' : 'chip-green'}" style="font-size:.65rem;">${a.st}</span></td>
+  </tr>`;
+    });
+
+    // ── Data Quality Metrics ──
+    const dqMetrics = {
+      completeness: 100.0,
+      distMatch: 10.3,
+      dupRate: 0.0
+    };
+
+    // ── Animate on load ──
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.querySelectorAll('.drift-bar-fill[data-w]').forEach(el => {
+          el.style.width = el.getAttribute('data-w') + '%';
+        });
+        
+        // Update Completeness
+        document.getElementById('dq1').style.width = dqMetrics.completeness.toFixed(1) + '%';
+        document.getElementById('dq1Val').textContent = dqMetrics.completeness.toFixed(1) + '%';
+        
+        // Update Distribution Match
+        document.getElementById('dq2').style.width = dqMetrics.distMatch.toFixed(1) + '%';
+        document.getElementById('dq2Val').textContent = dqMetrics.distMatch.toFixed(1) + '%';
+        
+        // Update Duplicate Rate
+        document.getElementById('dq3').style.width = (100 - dqMetrics.dupRate).toFixed(1) + '%';
+        document.getElementById('dq3Val').textContent = dqMetrics.dupRate.toFixed(1) + '%';
+      }, 400);
+    });
+
+    // ── Chart defaults ──
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Inter',sans-serif";
+    Chart.defaults.font.size = 10;
+
+    // ── KS-test p-values chart ──
+    (() => {
+      const feats = driftFeatures.map(f => f.name.split('_')[0]);
+      const pvals = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+      new Chart(document.getElementById('ksChart'), {
+        type: 'bar',
+        data: {
+          labels: feats,
+          datasets: [{
+            label: 'KS p-value', data: pvals,
+            backgroundColor: pvals.map(p => p < 0.05 ? 'rgba(239,68,68,.5)' : p < 0.2 ? 'rgba(245,158,11,.5)' : 'rgba(16,185,129,.5)'),
+            borderColor: pvals.map(p => p < 0.05 ? '#ef4444' : p < 0.2 ? '#f59e0b' : '#10b981'),
+            borderWidth: 1, borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            annotation: {
+              annotations: {
+                line1: {
+                  type: 'line', yMin: .05, yMax: .05,
+                  borderColor: 'rgba(239,68,68,.5)', borderWidth: 1, borderDash: [4, 3]
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,.03)' }, ticks: { font: { size: 9 } } },
+            y: {
+              grid: { color: 'rgba(255,255,255,.04)' }, max: 0.6,
+              title: { display: true, text: 'p-value', font: { size: 9 } }
+            }
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>

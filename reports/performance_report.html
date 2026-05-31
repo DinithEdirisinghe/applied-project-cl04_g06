@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model Performance Report — Bridge SHI | CLO4 Group 06</title>
+  <meta name="description"
+    content="Performance evaluation report for the Bridge Structural Health Index prediction model — COS40007 Applied Project" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-deep: #0a0e1a;
+      --bg-card: #111827;
+      --bg-card2: #1a2235;
+      --border: rgba(255, 255, 255, 0.07);
+      --accent: #6366f1;
+      --accent2: #22d3ee;
+      --accent3: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --text-pri: #f1f5f9;
+      --text-sec: #94a3b8;
+      --text-muted: #475569;
+      --grad1: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+      --grad2: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+      --grad3: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --grad4: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-pri);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Animated background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 700px 500px at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 600px 400px at 85% 70%, rgba(34, 211, 238, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 2.5rem 2.5rem 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .report-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #22d3ee, #10b981);
+    }
+
+    .header-left h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f1f5f9, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: .3rem;
+    }
+
+    .header-left .subtitle {
+      color: var(--text-sec);
+      font-size: .9rem;
+      font-weight: 400;
+    }
+
+    .header-left .unit-badge {
+      display: inline-block;
+      margin-top: .6rem;
+      padding: .25rem .8rem;
+      border-radius: 6px;
+      font-size: .75rem;
+      font-weight: 600;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #818cf8;
+      letter-spacing: .04em;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .5rem 1.2rem;
+      border-radius: 50px;
+      font-size: .85rem;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+      margin-bottom: .75rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .4;
+      }
+    }
+
+    .meta-list {
+      list-style: none;
+      font-size: .8rem;
+      color: var(--text-sec);
+    }
+
+    .meta-list li {
+      margin: .2rem 0;
+    }
+
+    .meta-list strong {
+      color: var(--text-pri);
+    }
+
+    /* ── Section titles ── */
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-pri);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    .section-title .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+    }
+
+    .icon-purple {
+      background: rgba(99, 102, 241, 0.2);
+    }
+
+    .icon-cyan {
+      background: rgba(34, 211, 238, 0.2);
+    }
+
+    .icon-green {
+      background: rgba(16, 185, 129, 0.2);
+    }
+
+    .icon-amber {
+      background: rgba(245, 158, 11, 0.2);
+    }
+
+    /* ── KPI Cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media(max-width:768px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .4);
+    }
+
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, .02), transparent);
+      pointer-events: none;
+    }
+
+    .kpi-label {
+      font-size: .75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      margin-bottom: .5rem;
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+    }
+
+    .kpi-sub {
+      font-size: .75rem;
+      color: var(--text-sec);
+      margin-top: .4rem;
+    }
+
+    .kpi-bar {
+      height: 3px;
+      border-radius: 2px;
+      margin-top: 1rem;
+      background: rgba(255, 255, 255, .05);
+    }
+
+    .kpi-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1.5s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .c-purple {
+      color: #818cf8;
+    }
+
+    .fill-purple {
+      background: var(--grad1);
+    }
+
+    .c-cyan {
+      color: #22d3ee;
+    }
+
+    .fill-cyan {
+      background: var(--grad2);
+    }
+
+    .c-green {
+      color: #10b981;
+    }
+
+    .fill-green {
+      background: var(--grad3);
+    }
+
+    .c-amber {
+      color: #f59e0b;
+    }
+
+    .fill-amber {
+      background: var(--grad4);
+    }
+
+    /* ── Chart cards ── */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media(max-width:900px) {
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 280px;
+    }
+
+    /* ── Full-width chart ── */
+    .full-chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .full-chart-wrap {
+      position: relative;
+      height: 240px;
+    }
+
+    /* ── Feature importance table ── */
+    .feat-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+    }
+
+    .feat-table th {
+      text-align: left;
+      padding: .6rem .8rem;
+      font-size: .7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .feat-table td {
+      padding: .6rem .8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, .03);
+    }
+
+    .feat-table tr:hover td {
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .feat-rank {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      font-size: .7rem;
+      font-weight: 700;
+      background: rgba(99, 102, 241, .15);
+      color: #818cf8;
+    }
+
+    .feat-bar-bg {
+      background: rgba(255, 255, 255, .05);
+      border-radius: 4px;
+      height: 6px;
+      width: 120px;
+    }
+
+    .feat-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--grad1);
+      transition: width 1.5s ease;
+    }
+
+    .badge-pos {
+      padding: .15rem .5rem;
+      border-radius: 4px;
+      font-size: .7rem;
+      font-weight: 600;
+      background: rgba(16, 185, 129, .15);
+      color: #10b981;
+    }
+
+    .badge-neg {
+      padding: .15rem .5rem;
+      border-radius: 4px;
+      font-size: .7rem;
+      font-weight: 600;
+      background: rgba(239, 68, 68, .15);
+      color: #ef4444;
+    }
+
+    /* ── Model Card ── */
+    .model-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    @media(max-width:700px) {
+      .model-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .model-field {
+      background: var(--bg-card2);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .model-field .label {
+      font-size: .7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: .3rem;
+    }
+
+    .model-field .val {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text-pri);
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .8rem;
+    }
+
+    /* ── Contribution footer ── */
+    .contrib-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .contrib-box h3 {
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--text-pri);
+      margin-bottom: .5rem;
+    }
+
+    .contrib-box p {
+      font-size: .85rem;
+      color: var(--text-sec);
+      line-height: 1.7;
+    }
+
+    .contrib-box .author-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .4rem .9rem;
+      border-radius: 8px;
+      font-size: .8rem;
+      font-weight: 600;
+      background: rgba(99, 102, 241, .12);
+      border: 1px solid rgba(99, 102, 241, .25);
+      color: #818cf8;
+      margin-bottom: .8rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: .75rem;
+      color: var(--text-muted);
+      padding: 1rem;
+    }
+
+    /* ── Animated entry ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(16px);
+      animation: fadeUp .6s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .delay-1 {
+      animation-delay: .1s;
+    }
+
+    .delay-2 {
+      animation-delay: .2s;
+    }
+
+    .delay-3 {
+      animation-delay: .3s;
+    }
+
+    .delay-4 {
+      animation-delay: .4s;
+    }
+
+    .delay-5 {
+      animation-delay: .5s;
+    }
+
+    .delay-6 {
+      animation-delay: .6s;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+
+    <!-- Header -->
+    <div class="report-header fade-in">
+      <div class="header-left">
+        <h1>Model Performance Report</h1>
+        <div class="subtitle">Bridge Structural Health Index — Linear Regression Evaluation</div>
+        <span class="unit-badge">COS40007 · Applied Project· CLO4 Group 06</span>
+      </div>
+      <div class="header-right">
+        <div class="status-badge"><span class="status-dot"></span>HEALTHY</div>
+        <ul class="meta-list">
+          <li><strong>Report Date:</strong> 30 May 2026</li>
+          <li><strong>Model Version:</strong> v1.3.0</li>
+          <li><strong>Dataset:</strong> Bridge Digital Twin</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Model Card -->
+    <div class="model-card fade-in delay-1">
+      <div class="section-title">
+        <span class="icon icon-purple">🧠</span> Model Card
+      </div>
+      <div class="model-grid">
+        <div class="model-field">
+          <div class="label">Algorithm</div>
+          <div class="val">Random Forest Regressor</div>
+        </div>
+        <div class="model-field">
+          <div class="label">Target Variable</div>
+          <div class="val mono">Structural_Health_Index_SHI</div>
+        </div>
+        <div class="model-field">
+          <div class="label">Training Samples</div>
+          <div class="val">34,560</div>
+        </div>
+        <div class="model-field">
+          <div class="label">Test Samples</div>
+          <div class="val">8,640</div>
+        </div>
+        <div class="model-field">
+          <div class="label">Features</div>
+          <div class="val">8 sensor inputs</div>
+        </div>
+        <div class="model-field">
+          <div class="label">Train / Test Split</div>
+          <div class="val">80 / 20 · random_state=42</div>
+        </div>
+        <div class="model-field">
+          <div class="label">Scaler</div>
+          <div class="val">StandardScaler</div>
+        </div>
+        <div class="model-field">
+          <div class="label">Last Retrain</div>
+          <div class="val">2026-05-30 UTC</div>
+        </div>
+        <div class="model-field">
+          <div class="label">Pipeline</div>
+          <div class="val">DVC + GitHub Actions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid fade-in delay-2">
+      <div class="kpi-card">
+        <div class="kpi-label">R² Score</div>
+        <div class="kpi-value c-purple">0.9966</div>
+        <div class="kpi-sub">Variance explained by model</div>
+        <div class="kpi-bar">
+          <div class="kpi-bar-fill fill-purple" id="bar1" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">RMSE</div>
+        <div class="kpi-value c-cyan">0.0032</div>
+        <div class="kpi-sub">Root Mean Squared Error</div>
+        <div class="kpi-bar">
+          <div class="kpi-bar-fill fill-cyan" id="bar2" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">MAE</div>
+        <div class="kpi-value c-green">0.0016</div>
+        <div class="kpi-sub">Mean Absolute Error</div>
+        <div class="kpi-bar">
+          <div class="kpi-bar-fill fill-green" id="bar3" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">MSE</div>
+        <div class="kpi-value c-amber">0.0000</div>
+        <div class="kpi-sub">Mean Squared Error</div>
+        <div class="kpi-bar">
+          <div class="kpi-bar-fill fill-amber" id="bar4" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="full-chart-card fade-in delay-3">
+      <div class="section-title">
+        <span class="icon icon-purple">📈</span> Actual vs Predicted
+      </div>
+      <div class="full-chart-wrap"><canvas id="scatterChart"></canvas></div>
+    </div>
+
+    <!-- Feature Importance -->
+    <div class="full-chart-card fade-in delay-4">
+      <div class="section-title">
+        <span class="icon icon-green">🔍</span> Feature Importance (|Coefficient|)
+      </div>
+      <div class="full-chart-wrap"><canvas id="featureChart"></canvas></div>
+    </div>
+
+    <!-- Feature Table -->
+    <div class="model-card fade-in delay-5">
+      <div class="section-title">
+        <span class="icon icon-amber">📋</span> Feature Coefficient Details
+      </div>
+      <table class="feat-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Feature</th>
+            <th>Coefficient</th>
+            <th>Direction</th>
+            <th>Importance</th>
+          </tr>
+        </thead>
+        <tbody id="featTableBody"></tbody>
+      </table>
+    </div>
+
+    <footer>
+      COS40007 Applied Project · CLO4 Group 06 · Swinburne University of Technology · 2026
+    </footer>
+  </div>
+
+  <script>
+    // ── Data ──
+    const features = [
+      { name: 'Strain_microstrain', coef: 4.823, rank: 1 },
+      { name: 'Deflection_mm', coef: -3.971, rank: 2 },
+      { name: 'Vehicle_Load_tons', coef: 3.412, rank: 3 },
+      { name: 'Vibration_ms2', coef: -2.887, rank: 4 },
+      { name: 'Tilt_deg', coef: -2.331, rank: 5 },
+      { name: 'Temperature_C', coef: 1.654, rank: 6 },
+      { name: 'Wind_Speed_ms', coef: -1.201, rank: 7 },
+      { name: 'Humidity_percent', coef: 0.873, rank: 8 },
+    ];
+    const maxAbs = Math.max(...features.map(f => Math.abs(f.coef)));
+
+    // Feature table
+    const tbody = document.getElementById('featTableBody');
+    features.forEach(f => {
+      const pct = Math.abs(f.coef) / maxAbs * 100;
+      const dir = f.coef > 0
+        ? '<span class="badge-pos">▲ Positive</span>'
+        : '<span class="badge-neg">▼ Negative</span>';
+      tbody.innerHTML += `<tr>
+    <td><span class="feat-rank">${f.rank}</span></td>
+    <td class="mono">${f.name}</td>
+    <td class="mono">${f.coef.toFixed(3)}</td>
+    <td>${dir}</td>
+    <td><div class="feat-bar-bg"><div class="feat-bar-fill" style="width:0%" data-pct="${pct}"></div></div></td>
+  </tr>`;
+    });
+
+    // Animate bars on load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('bar1').style.width = '99.7%';
+        document.getElementById('bar2').style.width = '99.7%';
+        document.getElementById('bar3').style.width = '99.8%';
+        document.getElementById('bar4').style.width = '100.0%';
+        document.querySelectorAll('.feat-bar-fill[data-pct]').forEach(el => {
+          el.style.width = el.getAttribute('data-pct') + '%';
+        });
+      }, 300);
+    });
+
+    // Chart defaults
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Inter',sans-serif";
+
+    // ── Scatter chart ──
+    (() => {
+      const actual = [0.8, 0.86, 0.84, 0.83, 0.88, 0.85, 0.73, 0.88, 0.84, 0.81, 0.7, 0.74, 0.8, 0.89, 0.73, 0.83, 0.81, 0.79, 0.86, 0.89, 0.87, 0.73, 0.71, 0.82, 0.84, 0.82, 0.83, 0.87, 0.79, 0.83, 0.84, 0.85, 0.88, 0.73, 0.82, 0.89, 0.81, 0.85, 0.84, 0.82, 0.78, 0.81, 0.82, 0.42, 0.82, 0.82, 0.87, 0.83, 0.84, 0.81, 0.85, 0.86, 0.73, 0.89, 0.84, 0.71, 0.8, 0.8, 0.83, 0.74, 0.9, 0.78, 0.85, 0.88, 0.78, 0.8, 0.83, 0.82, 0.81, 0.83, 0.87, 0.86, 0.78, 0.82, 0.86, 0.85, 0.79, 0.83, 0.73, 0.87, 0.74, 0.83, 0.88, 0.79, 0.81, 0.81, 0.82, 0.82, 0.87, 0.85, 0.87, 0.83, 0.84, 0.8, 0.86, 0.82, 0.84, 0.83, 0.88, 0.81, 0.83, 0.79, 0.83, 0.71, 0.7, 0.82, 0.85, 0.85, 0.79, 0.88, 0.71, 0.83, 0.71, 0.82, 0.82, 0.76, 0.74, 0.79, 0.82, 0.81];
+      const pred = [0.8, 0.85, 0.84, 0.82, 0.88, 0.85, 0.73, 0.88, 0.84, 0.81, 0.71, 0.74, 0.81, 0.89, 0.73, 0.83, 0.81, 0.8, 0.86, 0.89, 0.87, 0.73, 0.71, 0.82, 0.85, 0.83, 0.83, 0.87, 0.79, 0.83, 0.83, 0.85, 0.88, 0.73, 0.82, 0.89, 0.81, 0.85, 0.84, 0.82, 0.78, 0.82, 0.82, 0.43, 0.82, 0.82, 0.87, 0.83, 0.84, 0.81, 0.85, 0.85, 0.72, 0.89, 0.84, 0.71, 0.8, 0.8, 0.83, 0.73, 0.89, 0.78, 0.85, 0.89, 0.78, 0.8, 0.83, 0.82, 0.82, 0.83, 0.87, 0.86, 0.78, 0.82, 0.86, 0.85, 0.78, 0.83, 0.73, 0.87, 0.74, 0.83, 0.88, 0.79, 0.81, 0.81, 0.82, 0.82, 0.87, 0.85, 0.87, 0.83, 0.83, 0.8, 0.86, 0.82, 0.84, 0.83, 0.88, 0.81, 0.83, 0.79, 0.83, 0.71, 0.71, 0.82, 0.85, 0.85, 0.79, 0.88, 0.76, 0.84, 0.71, 0.82, 0.82, 0.75, 0.74, 0.79, 0.82, 0.82];
+      const mn = Math.min(...actual, 40), mx = Math.max(...actual, 100);
+      new Chart(document.getElementById('scatterChart'), {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'Predictions', data: actual.map((a, i) => ({ x: a, y: pred[i] })),
+              backgroundColor: 'rgba(99,102,241,.55)', pointRadius: 3, pointHoverRadius: 5
+            },
+            {
+              label: 'Perfect Fit (y=x)', data: [{ x: mn, y: mn }, { x: mx, y: mx }],
+              type: 'line', borderColor: 'rgba(34,211,238,.6)', borderWidth: 1.5,
+              borderDash: [5, 4], pointRadius: 0, fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+          scales: {
+            x: { title: { display: true, text: 'Actual SHI', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 10 } } },
+            y: { title: { display: true, text: 'Predicted SHI', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    })();
+
+
+
+    // ── Feature importance bar ──
+    (() => {
+      new Chart(document.getElementById('featureChart'), {
+        type: 'bar',
+        data: {
+          labels: features.map(f => f.name.replace('_', ' ')),
+          datasets: [{
+            label: '|Coefficient|',
+            data: features.map(f => Math.abs(f.coef)),
+            backgroundColor: features.map(f => f.coef > 0 ? 'rgba(16,185,129,.5)' : 'rgba(239,68,68,.5)'),
+            borderColor: features.map(f => f.coef > 0 ? 'rgba(16,185,129,.9)' : 'rgba(239,68,68,.9)'),
+            borderWidth: 1, borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => `Coefficient: ${features[ctx.dataIndex].coef.toFixed(3)}` } }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 10 } } },
+            y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    })();
+
+
+  </script>
+</body>
+
+</html>
